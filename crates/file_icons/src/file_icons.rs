@@ -46,6 +46,17 @@ impl FileIcons {
                 return maybe_path;
             }
 
+            if let Some((stem, _)) = typ.split_once('.') {
+                if let Some(icon) = this
+                    .icon_theme
+                    .file_stems
+                    .get(stem)
+                    .and_then(|typ| this.get_icon_for_type(typ, cx))
+                {
+                    return Some(icon);
+                }
+            }
+
             // check if suffix based on first dot is in suffixes
             // e.g. consider `module.js` as suffix to angular's module file named `auth.module.js`
             while let Some((_, suffix)) = typ.split_once('.') {
@@ -282,5 +293,23 @@ mod tests {
                 "the default must stay `icon` so existing users see no change"
             );
         });
+    }
+
+    #[gpui::test]
+    fn test_file_stem_icon_matches_files_with_additional_suffix(cx: &mut gpui::TestAppContext) {
+        cx.update(|cx| theme::init(theme::LoadThemes::JustBase, cx));
+
+        let icon = cx.read(|cx| FileIcons::get_icon(Path::new("Dockerfile.dev"), cx));
+
+        assert_eq!(icon.as_deref(), Some("icons/file_icons/docker.svg"));
+    }
+
+    #[gpui::test]
+    fn test_file_stem_icon_matches_files_with_lock_suffix(cx: &mut gpui::TestAppContext) {
+        cx.update(|cx| theme::init(theme::LoadThemes::JustBase, cx));
+
+        let icon = cx.read(|cx| FileIcons::get_icon(Path::new("Podfile.lock"), cx));
+
+        assert_eq!(icon.as_deref(), Some("icons/file_icons/ruby.svg"));
     }
 }
